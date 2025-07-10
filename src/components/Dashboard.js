@@ -20,55 +20,32 @@ const Dashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Mock data for demonstration - replace with actual API call
-      const mockData = {
-        totalSales: 125000,
-        totalOrders: 1250,
-        totalCustomers: 450,
-        totalProducts: 850,
-        salesChange: 12.5,
-        ordersChange: -2.3,
-        customersChange: 8.7,
-        productsChange: 3.2,
-        recentTransactions: [
-          { id: 1, customer: 'John Doe', amount: 45.50, date: '2024-01-15', status: 'completed' },
-          { id: 2, customer: 'Jane Smith', amount: 78.20, date: '2024-01-15', status: 'completed' },
-          { id: 3, customer: 'Bob Johnson', amount: 23.99, date: '2024-01-14', status: 'completed' },
-          { id: 4, customer: 'Alice Wilson', amount: 156.75, date: '2024-01-14', status: 'pending' },
-        ]
-      };
-      
-      setDashboardData(mockData);
+      const response = await apiService.getDashboardStats();
+      if (response) {
+        setDashboardData(response);
+      }
     } catch (error) {
       setError('Failed to load dashboard data');
       toast.error('Failed to load dashboard data');
+      console.error('Dashboard data error:', error);
     }
   };
 
   const fetchSalesData = async () => {
     try {
-      // Mock sales data for chart - replace with actual API call
-      const mockSalesData = [
-        { date: '2024-01-01', sales: 4000, orders: 240 },
-        { date: '2024-01-02', sales: 3000, orders: 180 },
-        { date: '2024-01-03', sales: 2000, orders: 120 },
-        { date: '2024-01-04', sales: 2780, orders: 167 },
-        { date: '2024-01-05', sales: 1890, orders: 113 },
-        { date: '2024-01-06', sales: 2390, orders: 143 },
-        { date: '2024-01-07', sales: 3490, orders: 209 },
-        { date: '2024-01-08', sales: 4100, orders: 246 },
-        { date: '2024-01-09', sales: 3200, orders: 192 },
-        { date: '2024-01-10', sales: 2800, orders: 168 },
-        { date: '2024-01-11', sales: 3800, orders: 228 },
-        { date: '2024-01-12', sales: 4200, orders: 252 },
-        { date: '2024-01-13', sales: 3600, orders: 216 },
-        { date: '2024-01-14', sales: 4500, orders: 270 },
-        { date: '2024-01-15', sales: 5000, orders: 300 },
-      ];
-      
-      setSalesData(mockSalesData);
+      const response = await apiService.getSalesData();
+      if (response) {
+        // Transform the data to match chart format
+        const transformedData = response.map(item => ({
+          date: item.date,
+          sales: parseFloat(item.total) || 0,
+          orders: parseInt(item.quantity) || 0
+        }));
+        setSalesData(transformedData);
+      }
     } catch (error) {
       toast.error('Failed to load sales data');
+      console.error('Sales data error:', error);
     } finally {
       setLoading(false);
     }
@@ -93,83 +70,86 @@ const Dashboard = () => {
   }
 
   if (error) {
-    return <div className="error">{error}</div>;
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <h2 className="text-xl font-semibold text-red-800 mb-2">Error</h2>
+          <p className="text-red-600">{error}</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="container">
-      <h1 className="dashboard-title">
-        Welcome back, {user?.name || user?.email}!
+    <div className="container mx-auto px-4 py-8">
+      <h1 className="text-3xl font-bold text-gray-900 mb-8">
+        Welcome back, {user?.username || 'User'}!
       </h1>
       
       {/* Key Metrics */}
-      <div className="dashboard-grid">
-        <div className="dashboard-card">
-          <div className="dashboard-card-header">
-            <FiDollarSign size={24} color="#28a745" />
-            <h3 className="dashboard-card-title">Total Sales</h3>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <FiDollarSign size={24} className="text-green-500" />
+            <h3 className="text-lg font-semibold text-gray-900">Total Sales</h3>
           </div>
-          <div className="dashboard-card-value">
-            {formatCurrency(dashboardData?.totalSales)}
+          <div className="text-2xl font-bold text-gray-900">
+            {formatCurrency(dashboardData?.totalSales || 0)}
           </div>
-          <div className={`dashboard-card-change ${dashboardData?.salesChange > 0 ? 'positive' : 'negative'}`}>
-            {dashboardData?.salesChange > 0 ? <FiTrendingUp size={16} /> : <FiTrendingDown size={16} />}
-            {Math.abs(dashboardData?.salesChange)}% from last month
-          </div>
-        </div>
-
-        <div className="dashboard-card">
-          <div className="dashboard-card-header">
-            <FiShoppingCart size={24} color="#007bff" />
-            <h3 className="dashboard-card-title">Total Orders</h3>
-          </div>
-          <div className="dashboard-card-value">
-            {dashboardData?.totalOrders?.toLocaleString()}
-          </div>
-          <div className={`dashboard-card-change ${dashboardData?.ordersChange > 0 ? 'positive' : 'negative'}`}>
-            {dashboardData?.ordersChange > 0 ? <FiTrendingUp size={16} /> : <FiTrendingDown size={16} />}
-            {Math.abs(dashboardData?.ordersChange)}% from last month
+          <div className="text-sm text-gray-500 mt-2">
+            Today's total sales
           </div>
         </div>
 
-        <div className="dashboard-card">
-          <div className="dashboard-card-header">
-            <FiUsers size={24} color="#ffc107" />
-            <h3 className="dashboard-card-title">Total Customers</h3>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <FiShoppingCart size={24} className="text-blue-500" />
+            <h3 className="text-lg font-semibold text-gray-900">Total Orders</h3>
           </div>
-          <div className="dashboard-card-value">
-            {dashboardData?.totalCustomers?.toLocaleString()}
+          <div className="text-2xl font-bold text-gray-900">
+            {(dashboardData?.totalOrders || 0).toLocaleString()}
           </div>
-          <div className={`dashboard-card-change ${dashboardData?.customersChange > 0 ? 'positive' : 'negative'}`}>
-            {dashboardData?.customersChange > 0 ? <FiTrendingUp size={16} /> : <FiTrendingDown size={16} />}
-            {Math.abs(dashboardData?.customersChange)}% from last month
+          <div className="text-sm text-gray-500 mt-2">
+            Orders today
           </div>
         </div>
 
-        <div className="dashboard-card">
-          <div className="dashboard-card-header">
-            <FiShoppingCart size={24} color="#dc3545" />
-            <h3 className="dashboard-card-title">Total Products</h3>
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <FiUsers size={24} className="text-yellow-500" />
+            <h3 className="text-lg font-semibold text-gray-900">Total Customers</h3>
           </div>
-          <div className="dashboard-card-value">
-            {dashboardData?.totalProducts?.toLocaleString()}
+          <div className="text-2xl font-bold text-gray-900">
+            {(dashboardData?.totalCustomers || 0).toLocaleString()}
           </div>
-          <div className={`dashboard-card-change ${dashboardData?.productsChange > 0 ? 'positive' : 'negative'}`}>
-            {dashboardData?.productsChange > 0 ? <FiTrendingUp size={16} /> : <FiTrendingDown size={16} />}
-            {Math.abs(dashboardData?.productsChange)}% from last month
+          <div className="text-sm text-gray-500 mt-2">
+            Customers today
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-6">
+          <div className="flex items-center justify-between mb-4">
+            <FiShoppingCart size={24} className="text-red-500" />
+            <h3 className="text-lg font-semibold text-gray-900">Total Products</h3>
+          </div>
+          <div className="text-2xl font-bold text-gray-900">
+            {(dashboardData?.totalProducts || 0).toLocaleString()}
+          </div>
+          <div className="text-sm text-gray-500 mt-2">
+            Products in system
           </div>
         </div>
       </div>
 
       {/* Sales Chart */}
-      <div className="sales-chart-container">
-        <div className="sales-chart-header">
-          <h3 className="sales-chart-title">Sales Overview</h3>
-          <div className="sales-filter">
-            <select className="form-select">
+      <div className="bg-white rounded-lg shadow p-6 mb-8">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-semibold text-gray-900">Sales Overview</h3>
+          <div className="flex items-center space-x-4">
+            <select className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="7">Last 7 Days</option>
               <option value="15">Last 15 Days</option>
               <option value="30">Last 30 Days</option>
-              <option value="90">Last 90 Days</option>
             </select>
           </div>
         </div>
@@ -193,36 +173,53 @@ const Dashboard = () => {
       </div>
 
       {/* Recent Transactions */}
-      <div className="card">
-        <div className="card-header">
-          <h3 className="card-title">Recent Transactions</h3>
+      <div className="bg-white rounded-lg shadow">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-xl font-semibold text-gray-900">Recent Transactions</h3>
         </div>
-        <div className="table-responsive">
-          <table className="table">
-            <thead>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
               <tr>
-                <th>Customer</th>
-                <th>Amount</th>
-                <th>Date</th>
-                <th>Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Transaction ID
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Customer
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Amount
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Time
+                </th>
               </tr>
             </thead>
-            <tbody>
-              {dashboardData?.recentTransactions?.map(transaction => (
-                <tr key={transaction.id}>
-                  <td>{transaction.customer}</td>
-                  <td>{formatCurrency(transaction.amount)}</td>
-                  <td>{formatDate(transaction.date)}</td>
-                  <td>
-                    <span className={`badge ${transaction.status === 'completed' ? 'badge-success' : 'badge-warning'}`}>
-                      {transaction.status}
-                    </span>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {dashboardData?.recentTransactions?.map((transaction) => (
+                <tr key={transaction.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                    #{transaction.id}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {transaction.customer}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {formatCurrency(transaction.amount)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {transaction.time}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        {(!dashboardData?.recentTransactions || dashboardData.recentTransactions.length === 0) && (
+          <div className="px-6 py-8 text-center text-gray-500">
+            No recent transactions found
+          </div>
+        )}
       </div>
     </div>
   );

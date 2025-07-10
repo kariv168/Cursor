@@ -24,58 +24,46 @@ const SalesData = () => {
   const COLORS = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6c757d', '#17a2b8'];
 
   useEffect(() => {
-    if (hasPermission('view_sales') || user?.role === 'admin') {
+    if (hasPermission('view_sales') || user?.role === 'administrator') {
       fetchSalesData();
     }
   }, [user, hasPermission]);
 
   const fetchSalesData = async () => {
     try {
-      // Mock sales data - replace with actual API call
-      const mockSalesData = [
-        { id: 1, product: 'Milk', category: 'Dairy', quantity: 150, unitPrice: 3.50, total: 525.00, date: '2024-01-15', customer: 'John Doe' },
-        { id: 2, product: 'Bread', category: 'Bakery', quantity: 200, unitPrice: 2.50, total: 500.00, date: '2024-01-15', customer: 'Jane Smith' },
-        { id: 3, product: 'Apples', category: 'Fruits', quantity: 300, unitPrice: 1.20, total: 360.00, date: '2024-01-14', customer: 'Bob Johnson' },
-        { id: 4, product: 'Cheese', category: 'Dairy', quantity: 80, unitPrice: 6.00, total: 480.00, date: '2024-01-14', customer: 'Alice Wilson' },
-        { id: 5, product: 'Bananas', category: 'Fruits', quantity: 250, unitPrice: 0.80, total: 200.00, date: '2024-01-13', customer: 'Charlie Brown' },
-        { id: 6, product: 'Chicken', category: 'Meat', quantity: 50, unitPrice: 8.50, total: 425.00, date: '2024-01-13', customer: 'Diana Prince' },
-        { id: 7, product: 'Yogurt', category: 'Dairy', quantity: 120, unitPrice: 4.00, total: 480.00, date: '2024-01-12', customer: 'Frank Castle' },
-        { id: 8, product: 'Pasta', category: 'Pantry', quantity: 180, unitPrice: 2.00, total: 360.00, date: '2024-01-12', customer: 'Grace Kelly' },
-        { id: 9, product: 'Beef', category: 'Meat', quantity: 30, unitPrice: 12.00, total: 360.00, date: '2024-01-11', customer: 'Henry Ford' },
-        { id: 10, product: 'Tomatoes', category: 'Vegetables', quantity: 200, unitPrice: 1.50, total: 300.00, date: '2024-01-11', customer: 'Ivy League' },
-      ];
+      setLoading(true);
+      const response = await apiService.getSalesData();
+      
+      if (response) {
+        setSalesData(response);
 
-      setSalesData(mockSalesData);
+        // Process data for charts
+        const chartData = response.reduce((acc, item) => {
+          const date = item.date;
+          const existing = acc.find(d => d.date === date);
+          if (existing) {
+            existing.sales += parseFloat(item.total) || 0;
+            existing.quantity += parseInt(item.quantity) || 0;
+          } else {
+            acc.push({ 
+              date, 
+              sales: parseFloat(item.total) || 0, 
+              quantity: parseInt(item.quantity) || 0 
+            });
+          }
+          return acc;
+        }, []);
 
-      // Process data for charts
-      const chartData = mockSalesData.reduce((acc, item) => {
-        const date = item.date;
-        const existing = acc.find(d => d.date === date);
-        if (existing) {
-          existing.sales += item.total;
-          existing.quantity += item.quantity;
-        } else {
-          acc.push({ date, sales: item.total, quantity: item.quantity });
-        }
-        return acc;
-      }, []);
+        setChartData(chartData);
 
-      setChartData(chartData);
-
-      // Process data for category pie chart
-      const categoryData = mockSalesData.reduce((acc, item) => {
-        const existing = acc.find(d => d.category === item.category);
-        if (existing) {
-          existing.value += item.total;
-        } else {
-          acc.push({ category: item.category, value: item.total });
-        }
-        return acc;
-      }, []);
-
-      setCategoryData(categoryData);
+        // Process data for category pie chart (if category data is available)
+        // Note: Backend doesn't provide category data in sales endpoint yet
+        const categoryData = [];
+        setCategoryData(categoryData);
+      }
     } catch (error) {
       toast.error('Failed to load sales data');
+      console.error('Sales data error:', error);
     } finally {
       setLoading(false);
     }
@@ -110,10 +98,9 @@ const SalesData = () => {
 
   const filteredData = salesData.filter(item => {
     const matchesSearch = !filters.search || 
-      item.product.toLowerCase().includes(filters.search.toLowerCase()) ||
-      item.customer.toLowerCase().includes(filters.search.toLowerCase());
+      (item.product && item.product.toLowerCase().includes(filters.search.toLowerCase()));
     
-    const matchesCategory = !filters.category || item.category === filters.category;
+    const matchesCategory = !filters.category || (item.category && item.category === filters.category);
     
     const matchesDate = (!filters.startDate || item.date >= filters.startDate) &&
                        (!filters.endDate || item.date <= filters.endDate);
@@ -121,170 +108,187 @@ const SalesData = () => {
     return matchesSearch && matchesCategory && matchesDate;
   });
 
-  const totalSales = filteredData.reduce((sum, item) => sum + item.total, 0);
-  const totalQuantity = filteredData.reduce((sum, item) => sum + item.quantity, 0);
+  const totalSales = filteredData.reduce((sum, item) => sum + (parseFloat(item.total) || 0), 0);
+  const totalQuantity = filteredData.reduce((sum, item) => sum + (parseInt(item.quantity) || 0), 0);
 
   if (loading) {
     return <Loading message="Loading sales data..." />;
   }
 
-  if (!hasPermission('view_sales') && user?.role !== 'admin') {
+  if (!hasPermission('view_sales') && user?.role !== 'administrator') {
     return (
-      <div className="container">
-        <div className="error">
-          You don't have permission to view sales data.
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <h2 className="text-xl font-semibold text-red-800 mb-2">Access Denied</h2>
+          <p className="text-red-600">You don't have permission to view sales data.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="container">
-      <div className="sales-data-header">
-        <h1>Sales Data</h1>
-        <div className="sales-data-actions">
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">Sales Data</h1>
+        <div className="flex items-center space-x-4">
           <button 
-            className={`btn ${viewMode === 'table' ? 'btn-primary' : 'btn-secondary'}`}
+            className={`px-4 py-2 rounded-lg ${
+              viewMode === 'table' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
             onClick={() => setViewMode('table')}
           >
             Table View
           </button>
           <button 
-            className={`btn ${viewMode === 'charts' ? 'btn-primary' : 'btn-secondary'}`}
+            className={`px-4 py-2 rounded-lg ${
+              viewMode === 'charts' 
+                ? 'bg-blue-600 text-white' 
+                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+            }`}
             onClick={() => setViewMode('charts')}
           >
             Charts View
           </button>
-          <button className="btn btn-success" onClick={handleExport}>
+          <button 
+            className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+            onClick={handleExport}
+          >
             <FiDownload size={16} />
             Export
           </button>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="card">
-        <div className="card-header">
-          <h3 className="card-title">
-            <FiFilter size={20} />
-            Filters
-          </h3>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Sales</h3>
+          <p className="text-2xl font-bold text-green-600">{formatCurrency(totalSales)}</p>
         </div>
-        <div className="filters-grid">
-          <div className="form-group">
-            <label className="form-label">Search</label>
-            <div className="search-input">
-              <FiSearch size={16} />
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Quantity</h3>
+          <p className="text-2xl font-bold text-blue-600">{totalQuantity.toLocaleString()}</p>
+        </div>
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Total Records</h3>
+          <p className="text-2xl font-bold text-purple-600">{filteredData.length}</p>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="flex items-center gap-2 mb-4">
+          <FiFilter size={20} className="text-gray-600" />
+          <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Search</label>
+            <div className="relative">
+              <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="text"
                 name="search"
                 value={filters.search}
                 onChange={handleFilterChange}
-                className="form-control"
-                placeholder="Search products or customers..."
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Search products..."
               />
             </div>
           </div>
           
-          <div className="form-group">
-            <label className="form-label">Category</label>
-            <select
-              name="category"
-              value={filters.category}
-              onChange={handleFilterChange}
-              className="form-select"
-            >
-              <option value="">All Categories</option>
-              <option value="Dairy">Dairy</option>
-              <option value="Bakery">Bakery</option>
-              <option value="Fruits">Fruits</option>
-              <option value="Vegetables">Vegetables</option>
-              <option value="Meat">Meat</option>
-              <option value="Pantry">Pantry</option>
-            </select>
-          </div>
-          
-          <div className="form-group">
-            <label className="form-label">Start Date</label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
             <input
               type="date"
               name="startDate"
               value={filters.startDate}
               onChange={handleFilterChange}
-              className="form-control"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
           
-          <div className="form-group">
-            <label className="form-label">End Date</label>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
             <input
               type="date"
               name="endDate"
               value={filters.endDate}
               onChange={handleFilterChange}
-              className="form-control"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
-        </div>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="sales-summary">
-        <div className="summary-card">
-          <h4>Total Sales</h4>
-          <p className="summary-value">{formatCurrency(totalSales)}</p>
-        </div>
-        <div className="summary-card">
-          <h4>Total Items Sold</h4>
-          <p className="summary-value">{totalQuantity.toLocaleString()}</p>
-        </div>
-        <div className="summary-card">
-          <h4>Total Transactions</h4>
-          <p className="summary-value">{filteredData.length}</p>
-        </div>
-      </div>
-
-      {/* Content based on view mode */}
-      {viewMode === 'table' ? (
-        <div className="card">
-          <div className="card-header">
-            <h3 className="card-title">Sales Transactions</h3>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <select
+              name="category"
+              value={filters.category}
+              onChange={handleFilterChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">All Categories</option>
+              {/* Categories would be populated from backend */}
+            </select>
           </div>
-          <div className="table-responsive">
-            <table className="table">
-              <thead>
+        </div>
+      </div>
+
+      {viewMode === 'table' ? (
+        /* Table View */
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <th>Date</th>
-                  <th>Product</th>
-                  <th>Category</th>
-                  <th>Customer</th>
-                  <th>Quantity</th>
-                  <th>Unit Price</th>
-                  <th>Total</th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Product
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Quantity
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Total
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Date
+                  </th>
                 </tr>
               </thead>
-              <tbody>
-                {filteredData.map(item => (
-                  <tr key={item.id}>
-                    <td>{formatDate(item.date)}</td>
-                    <td>{item.product}</td>
-                    <td>
-                      <span className="badge badge-info">{item.category}</span>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {filteredData.map((item, index) => (
+                  <tr key={index} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {item.product || 'Unknown Product'}
                     </td>
-                    <td>{item.customer}</td>
-                    <td>{item.quantity}</td>
-                    <td>{formatCurrency(item.unitPrice)}</td>
-                    <td className="font-weight-bold">{formatCurrency(item.total)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {item.quantity}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      {formatCurrency(item.total)}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatDate(item.date)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
+          {filteredData.length === 0 && (
+            <div className="px-6 py-8 text-center text-gray-500">
+              No sales data found
+            </div>
+          )}
         </div>
       ) : (
-        <div className="charts-container">
-          <div className="chart-card">
-            <h3>Sales by Date</h3>
+        /* Charts View */
+        <div className="space-y-6">
+          {/* Sales Chart */}
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Sales Over Time</h3>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -298,146 +302,39 @@ const SalesData = () => {
                   ]}
                 />
                 <Legend />
-                <Bar dataKey="sales" fill="#007bff" />
+                <Bar dataKey="sales" fill="#007bff" name="Sales" />
+                <Bar dataKey="quantity" fill="#28a745" name="Quantity" />
               </BarChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="chart-card">
-            <h3>Sales by Category</h3>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={categoryData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ category, percent }) => `${category} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {categoryData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => formatCurrency(value)} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+          {/* Category Chart (if data available) */}
+          {categoryData.length > 0 && (
+            <div className="bg-white rounded-lg shadow p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Sales by Category</h3>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ category, percent }) => `${category} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip formatter={(value) => formatCurrency(value)} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       )}
-
-      <style jsx>{`
-        .sales-data-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 30px;
-        }
-        
-        .sales-data-actions {
-          display: flex;
-          gap: 10px;
-        }
-        
-        .filters-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-          gap: 20px;
-          padding: 20px;
-        }
-        
-        .search-input {
-          position: relative;
-        }
-        
-        .search-input svg {
-          position: absolute;
-          left: 12px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: #666;
-        }
-        
-        .search-input input {
-          padding-left: 40px;
-        }
-        
-        .sales-summary {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-          gap: 20px;
-          margin: 20px 0;
-        }
-        
-        .summary-card {
-          background: white;
-          padding: 20px;
-          border-radius: 8px;
-          box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-          text-align: center;
-        }
-        
-        .summary-card h4 {
-          margin-bottom: 10px;
-          color: #666;
-          font-size: 1rem;
-        }
-        
-        .summary-value {
-          font-size: 1.5rem;
-          font-weight: bold;
-          color: #007bff;
-          margin: 0;
-        }
-        
-        .charts-container {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-          gap: 20px;
-        }
-        
-        .chart-card {
-          background: white;
-          padding: 20px;
-          border-radius: 12px;
-          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        
-        .chart-card h3 {
-          margin-bottom: 20px;
-          color: #333;
-        }
-        
-        .table-responsive {
-          overflow-x: auto;
-        }
-        
-        .font-weight-bold {
-          font-weight: bold;
-        }
-        
-        @media (max-width: 768px) {
-          .sales-data-header {
-            flex-direction: column;
-            gap: 15px;
-            align-items: flex-start;
-          }
-          
-          .filters-grid {
-            grid-template-columns: 1fr;
-          }
-          
-          .sales-summary {
-            grid-template-columns: 1fr;
-          }
-          
-          .charts-container {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
     </div>
   );
 };
