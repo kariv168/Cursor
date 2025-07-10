@@ -24,8 +24,13 @@ export const AuthProvider = ({ children }) => {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        const userData = await apiService.getCurrentUser();
-        setUser(userData);
+        const response = await apiService.getCurrentUser();
+        if (response.success && response.data) {
+          setUser(response.data.user);
+        } else {
+          localStorage.removeItem('token');
+          setUser(null);
+        }
       }
     } catch (error) {
       console.error('Auth check failed:', error);
@@ -41,13 +46,21 @@ export const AuthProvider = ({ children }) => {
       setError(null);
       const response = await apiService.login(credentials);
       
-      if (response.token) {
-        localStorage.setItem('token', response.token);
-        setUser(response.user);
+      if (response.success && response.data) {
+        const { token, user } = response.data;
+        localStorage.setItem('token', token);
+        
+        // Map role_name to role for frontend compatibility
+        const userWithRole = {
+          ...user,
+          role: user.role_name
+        };
+        
+        setUser(userWithRole);
         return { success: true };
       }
       
-      return { success: false, message: 'Invalid credentials' };
+      return { success: false, message: response.message || 'Login failed' };
     } catch (error) {
       setError(error.message || 'Login failed');
       return { success: false, message: error.message || 'Login failed' };

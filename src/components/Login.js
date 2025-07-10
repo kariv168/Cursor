@@ -10,6 +10,7 @@ const Login = () => {
   });
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
   const { login, error } = useAuth();
 
   const handleChange = (e) => {
@@ -18,11 +19,44 @@ const Login = () => {
       ...prev,
       [name]: value
     }));
+    
+    // Clear validation error when user starts typing
+    if (validationErrors[name]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!formData.username.trim()) {
+      errors.username = 'Username is required';
+    } else if (formData.username.length < 3) {
+      errors.username = 'Username must be at least 3 characters';
+    }
+    
+    if (!formData.password) {
+      errors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      errors.password = 'Password must be at least 6 characters';
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
     setLoading(true);
+    setValidationErrors({});
 
     try {
       const result = await login(formData);
@@ -33,7 +67,14 @@ const Login = () => {
         toast.error(result.message || 'Login failed');
       }
     } catch (error) {
-      toast.error('An error occurred during login');
+      console.error('Login error:', error);
+      
+      // Handle validation errors from backend
+      if (error.message.includes('Validation error')) {
+        toast.error('Please check your input and try again');
+      } else {
+        toast.error(error.message || 'An error occurred during login');
+      }
     } finally {
       setLoading(false);
     }
@@ -49,7 +90,7 @@ const Login = () => {
         <h1 className="login-title">Supermarket System</h1>
         
         {error && (
-          <div className="error">
+          <div className="error-message">
             {error}
           </div>
         )}
@@ -58,7 +99,7 @@ const Login = () => {
           <div className="form-group">
             <label htmlFor="username" className="form-label">
               <FiMail size={16} style={{ marginRight: '8px' }} />
-              Email Address
+              Username
             </label>
             <input
               type="text"
@@ -66,10 +107,13 @@ const Login = () => {
               name="username"
               value={formData.username}
               onChange={handleChange}
-              className="form-control"
+              className={`form-control ${validationErrors.username ? 'error' : ''}`}
               placeholder="Enter your username"
               required
             />
+            {validationErrors.username && (
+              <div className="validation-error">{validationErrors.username}</div>
+            )}
           </div>
           
           <div className="form-group">
@@ -84,7 +128,7 @@ const Login = () => {
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="form-control"
+                className={`form-control ${validationErrors.password ? 'error' : ''}`}
                 placeholder="Enter your password"
                 required
                 style={{ paddingRight: '40px' }}
@@ -97,6 +141,9 @@ const Login = () => {
                 {showPassword ? <FiEyeOff size={16} /> : <FiEye size={16} />}
               </button>
             </div>
+            {validationErrors.password && (
+              <div className="validation-error">{validationErrors.password}</div>
+            )}
           </div>
           
           <button
@@ -113,7 +160,6 @@ const Login = () => {
           <p><strong>Admin:</strong> admin / password</p>
           <p><strong>Backend Dev:</strong> backend_dev / password</p>
           <p><strong>Business Analyst:</strong> biz_analyst / password</p>
-
         </div>
       </div>
       
@@ -156,6 +202,25 @@ const Login = () => {
           margin: 5px 0;
           font-size: 0.9rem;
           color: #666;
+        }
+        
+        .validation-error {
+          color: #dc3545;
+          font-size: 0.875rem;
+          margin-top: 4px;
+        }
+        
+        .form-control.error {
+          border-color: #dc3545;
+        }
+        
+        .error-message {
+          background-color: #f8d7da;
+          color: #721c24;
+          padding: 12px;
+          border-radius: 4px;
+          margin-bottom: 20px;
+          border: 1px solid #f5c6cb;
         }
       `}</style>
     </div>

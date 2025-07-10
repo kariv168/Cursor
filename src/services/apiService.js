@@ -49,10 +49,6 @@ export const apiService = {
     return await api.post('/auth/login', credentials);
   },
 
-  register: async (userData) => {
-    return await api.post('/auth/register', userData);
-  },
-
   getCurrentUser: async () => {
     return await api.get('/auth/me');
   },
@@ -61,52 +57,17 @@ export const apiService = {
     return await api.post('/auth/refresh');
   },
 
-  // User management endpoints
+  // User management endpoints (matching backend routes)
   getUsers: async (params = {}) => {
-    return await api.get('/users', { params });
+    return await api.get('/auth/users', { params });
   },
 
-  getUserById: async (id) => {
-    return await api.get(`/users/${id}`);
+  createUser: async (userData) => {
+    return await api.post('/auth/users', userData);
   },
 
-  updateUser: async (id, userData) => {
-    return await api.put(`/users/${id}`, userData);
-  },
-
-  deleteUser: async (id) => {
-    return await api.delete(`/users/${id}`);
-  },
-
-  updateUserPermissions: async (id, permissions) => {
-    return await api.patch(`/users/${id}/permissions`, { permissions });
-  },
-
-  updateUserRole: async (id, role) => {
-    return await api.patch(`/users/${id}/role`, { role });
-  },
-
-  // Sales data endpoints
-  getSalesData: async (params = {}) => {
-    return await api.get('/sales', { params });
-  },
-
-  getSalesStats: async (params = {}) => {
-    return await api.get('/sales/stats', { params });
-  },
-
-  getSalesByDate: async (startDate, endDate) => {
-    return await api.get('/sales/by-date', {
-      params: { startDate, endDate }
-    });
-  },
-
-  getSalesByProduct: async (params = {}) => {
-    return await api.get('/sales/by-product', { params });
-  },
-
-  getSalesByCategory: async (params = {}) => {
-    return await api.get('/sales/by-category', { params });
+  getRoles: async () => {
+    return await api.get('/auth/roles');
   },
 
   // Product management endpoints
@@ -130,47 +91,6 @@ export const apiService = {
     return await api.delete(`/products/${id}`);
   },
 
-  // Category management endpoints
-  getCategories: async () => {
-    return await api.get('/categories');
-  },
-
-  createCategory: async (categoryData) => {
-    return await api.post('/categories', categoryData);
-  },
-
-  updateCategory: async (id, categoryData) => {
-    return await api.put(`/categories/${id}`, categoryData);
-  },
-
-  deleteCategory: async (id) => {
-    return await api.delete(`/categories/${id}`);
-  },
-
-  // Dashboard endpoints
-  getDashboardStats: async () => {
-    return await api.get('/dashboard/stats');
-  },
-
-  getRecentTransactions: async (limit = 10) => {
-    return await api.get('/dashboard/recent-transactions', {
-      params: { limit }
-    });
-  },
-
-  // Reports endpoints
-  generateSalesReport: async (params) => {
-    return await api.get('/reports/sales', { params });
-  },
-
-  generateUserReport: async (params) => {
-    return await api.get('/reports/users', { params });
-  },
-
-  generateProductReport: async (params) => {
-    return await api.get('/reports/products', { params });
-  },
-
   // Inventory endpoints
   getInventory: async (params = {}) => {
     return await api.get('/inventory', { params });
@@ -184,27 +104,82 @@ export const apiService = {
     return await api.get('/inventory/low-stock');
   },
 
-  // Permissions endpoints
-  getPermissions: async () => {
-    return await api.get('/permissions');
+  // Order endpoints
+  getOrders: async (params = {}) => {
+    return await api.get('/orders', { params });
   },
 
-  getRoles: async () => {
-    return await api.get('/roles');
+  getOrderById: async (id) => {
+    return await api.get(`/orders/${id}`);
   },
 
-  // Audit trail endpoints
-  getAuditLogs: async (params = {}) => {
-    return await api.get('/audit-logs', { params });
+  createOrder: async (orderData) => {
+    return await api.post('/orders', orderData);
   },
 
-  // System settings endpoints
-  getSystemSettings: async () => {
-    return await api.get('/settings');
+  updateOrder: async (id, orderData) => {
+    return await api.put(`/orders/${id}`, orderData);
   },
 
-  updateSystemSettings: async (settings) => {
-    return await api.put('/settings', settings);
+  deleteOrder: async (id) => {
+    return await api.delete(`/orders/${id}`);
+  },
+
+  // Branch endpoints
+  getBranches: async (params = {}) => {
+    return await api.get('/branches', { params });
+  },
+
+  getBranchById: async (id) => {
+    return await api.get(`/branches/${id}`);
+  },
+
+  createBranch: async (branchData) => {
+    return await api.post('/branches', branchData);
+  },
+
+  updateBranch: async (id, branchData) => {
+    return await api.put(`/branches/${id}`, branchData);
+  },
+
+  deleteBranch: async (id) => {
+    return await api.delete(`/branches/${id}`);
+  },
+
+  // Customer endpoints
+  getCustomers: async (params = {}) => {
+    return await api.get('/customers', { params });
+  },
+
+  getCustomerById: async (id) => {
+    return await api.get(`/customers/${id}`);
+  },
+
+  createCustomer: async (customerData) => {
+    return await api.post('/customers', customerData);
+  },
+
+  updateCustomer: async (id, customerData) => {
+    return await api.put(`/customers/${id}`, customerData);
+  },
+
+  deleteCustomer: async (id) => {
+    return await api.delete(`/customers/${id}`);
+  },
+
+  // Dashboard endpoints
+  getDashboardStats: async () => {
+    return await api.get('/dashboard/stats');
+  },
+
+  // Sales data endpoints
+  getSalesData: async (params = {}) => {
+    return await api.get('/sales', { params });
+  },
+
+  // Health check
+  getHealth: async () => {
+    return await api.get('/health');
   },
 };
 

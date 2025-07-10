@@ -5,123 +5,62 @@ import { FiEdit, FiTrash2, FiPlus, FiX, FiCheck, FiSearch, FiUser, FiShield } fr
 import Loading from './Loading';
 import toast from 'react-hot-toast';
 
-const rolePermissionMap = {
-    administrator: [
-      'view_sales',
-      'manage_inventory',
-      'create_orders',
-      'view_reports',
-      'manage_products',
-      'process_returns',
-      'view_customers',
-      'manage_discounts'
-    ],
-    backend_developer: [
-      'manage_inventory',
-      'create_orders',
-      'process_returns',
-      'manage_products'
-    ],
-    business_analysis: [
-      'view_sales',
-      'view_reports',
-      'view_customers'
-    ]
-  };
-
 const UserManagement = () => {
   const { user, isAdmin } = useAuth();
   const [users, setUsers] = useState([]);
+  const [roles, setRoles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [modalMode, setModalMode] = useState('view'); // 'view', 'edit', 'create'
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    role: 'user',
-    permissions: [],
-    isActive: true
+    username: '',
+    password: '',
+    role_id: ''
   });
-
-  const availableRoles = [
-    { value: 'administrator', label: 'Administrator' },
-    { value: 'backend_developer', label: 'Backend Developer' },
-    { value: 'business_analysis', label: 'Business Analysis' }
-  ];
-
-  const availablePermissions = [
-    { value: 'view_sales', label: 'View Sales Data' },
-    { value: 'manage_inventory', label: 'Manage Inventory' },
-    { value: 'create_orders', label: 'Create Orders' },
-    { value: 'view_reports', label: 'View Reports' },
-    { value: 'manage_products', label: 'Manage Products' },
-    { value: 'process_returns', label: 'Process Returns' },
-    { value: 'view_customers', label: 'View Customers' },
-    { value: 'manage_discounts', label: 'Manage Discounts' }
-  ];
 
   useEffect(() => {
     if (isAdmin()) {
-      const fetchUsers = async () => {
-        try {
-          // Mock user data - replace with actual API call
-          const mockUsers = [
-            {
-              id: 1,
-              name: 'Alice Admin',
-              email: 'admin@supermarket.com',
-              role: 'administrator',
-              permissions: rolePermissionMap['administrator'],
-              isActive: true,
-              createdAt: '2024-01-01',
-              lastLogin: '2024-01-15'
-            },
-            {
-              id: 2,
-              name: 'Bob Backend',
-              email: 'backend@supermarket.com',
-              role: 'backend_developer',
-              permissions: rolePermissionMap['backend_developer'],
-              isActive: true,
-              createdAt: '2024-01-02',
-              lastLogin: '2024-01-14'
-            },
-            {
-              id: 3,
-              name: 'Ben Analyst',
-              email: 'analyst@supermarket.com',
-              role: 'business_analysis',
-              permissions: rolePermissionMap['business_analysis'],
-              isActive: true,
-              createdAt: '2024-01-03',
-              lastLogin: '2024-01-13'
-            }
-          ];
-
-          setUsers(mockUsers);
-        } catch (error) {
-          toast.error('Failed to load users');
-        } finally {
-          setLoading(false);
-        }
-      };
-
       fetchUsers();
+      fetchRoles();
     }
   }, [isAdmin]);
 
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const response = await apiService.getUsers();
+      if (response.success && response.data) {
+        setUsers(response.data.users);
+      }
+    } catch (error) {
+      toast.error('Failed to load users');
+      console.error('Error fetching users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRoles = async () => {
+    try {
+      const response = await apiService.getRoles();
+      if (response.success && response.data) {
+        setRoles(response.data.roles);
+      }
+    } catch (error) {
+      toast.error('Failed to load roles');
+      console.error('Error fetching roles:', error);
+    }
+  };
 
   const handleCreateUser = () => {
     setSelectedUser(null);
     setModalMode('create');
     setFormData({
-      name: '',
-      email: '',
-      role: 'user',
-      permissions: [],
-      isActive: true
+      username: '',
+      password: '',
+      role_id: ''
     });
     setShowModal(true);
   };
@@ -130,11 +69,9 @@ const UserManagement = () => {
     setSelectedUser(user);
     setModalMode('edit');
     setFormData({
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      permissions: user.permissions || [],
-      isActive: user.isActive
+      username: user.username,
+      password: '',
+      role_id: user.role_id
     });
     setShowModal(true);
   };
@@ -143,41 +80,26 @@ const UserManagement = () => {
     setSelectedUser(user);
     setModalMode('view');
     setFormData({
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      permissions: user.permissions || [],
-      isActive: user.isActive
+      username: user.username,
+      password: '',
+      role_id: user.role_id
     });
     setShowModal(true);
   };
 
   const handleDeleteUser = async (userId, userName) => {
-    if (userId === user.id) {
+    if (userId === user.user_id) {
       toast.error('You cannot delete your own account');
       return;
     }
 
     if (window.confirm(`Are you sure you want to delete user "${userName}"?`)) {
       try {
-        // Mock delete - replace with actual API call
-        setUsers(users.filter(u => u.id !== userId));
-        toast.success('User deleted successfully');
+        // Note: Backend doesn't have delete user endpoint yet
+        toast.error('Delete user functionality not implemented in backend');
       } catch (error) {
         toast.error('Failed to delete user');
       }
-    }
-  };
-
-  const handleToggleUserStatus = async (userId) => {
-    try {
-      // Mock toggle - replace with actual API call
-      setUsers(users.map(u => 
-        u.id === userId ? { ...u, isActive: !u.isActive } : u
-      ));
-      toast.success('User status updated successfully');
-    } catch (error) {
-      toast.error('Failed to update user status');
     }
   };
 
@@ -186,467 +108,258 @@ const UserManagement = () => {
 
     try {
       if (modalMode === 'create') {
-        // Mock create - replace with actual API call
-        const newUser = {
-          id: Date.now(),
-          ...formData,
-          createdAt: new Date().toISOString().split('T')[0],
-          lastLogin: null
-        };
-        setUsers([...users, newUser]);
-        toast.success('User created successfully');
+        const response = await apiService.createUser(formData);
+        if (response.success) {
+          toast.success('User created successfully');
+          setShowModal(false);
+          fetchUsers(); // Refresh the list
+        } else {
+          toast.error(response.message || 'Failed to create user');
+        }
       } else if (modalMode === 'edit') {
-        // Mock update - replace with actual API call
-        setUsers(users.map(u => 
-          u.id === selectedUser.id ? { ...u, ...formData } : u
-        ));
-        toast.success('User updated successfully');
+        // Note: Backend doesn't have update user endpoint yet
+        toast.error('Edit user functionality not implemented in backend');
       }
-      
-      setShowModal(false);
     } catch (error) {
-      toast.error('Failed to save user');
+      toast.error(error.message || 'An error occurred');
     }
   };
 
   const handleInputChange = (e) => {
-    const { name, value, type, checked } = e.target;
-
-    if (name === 'role') {
-      setFormData(prev => ({
-        ...prev,
-        role: value,
-        permissions: rolePermissionMap[value] || []
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: type === 'checkbox' ? checked : value
-      }));
-    }
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
-
-  const getRoleBadgeColor = (role) => {
-    switch (role) {
-      case 'administrator': return 'badge-danger';
-      case 'backend_developer': return 'badge-warning';
-      case 'business_analysis': return 'badge-info';
-      default: return 'badge-secondary';
+  const getRoleBadgeColor = (roleName) => {
+    switch (roleName) {
+      case 'administrator':
+        return 'bg-red-100 text-red-800';
+      case 'backend_developer':
+        return 'bg-blue-100 text-blue-800';
+      case 'business_analyst':
+        return 'bg-green-100 text-green-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Never';
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    return new Date(dateString).toLocaleDateString();
   };
 
   const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.role.toLowerCase().includes(searchTerm.toLowerCase())
+    user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.role_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-
-  if (loading) {
-    return <Loading message="Loading users..." />;
-  }
 
   if (!isAdmin()) {
     return (
-      <div className="container">
-        <div className="error">
-          You don't have permission to access user management.
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
+          <h2 className="text-xl font-semibold text-red-800 mb-2">Access Denied</h2>
+          <p className="text-red-600">You don't have permission to access user management.</p>
         </div>
       </div>
     );
   }
 
-  const handlePermissionChange = (permissionValue) => {
-    setFormData(prev => {
-      const alreadyHas = prev.permissions.includes(permissionValue);
-      return {
-        ...prev,
-        permissions: alreadyHas
-          ? prev.permissions.filter(p => p !== permissionValue)
-          : [...prev.permissions, permissionValue]
-      };
-    });
-  };
+  if (loading) {
+    return <Loading />;
+  }
 
   return (
-    <div className="container">
-      <div className="user-management-container">
-        <div className="user-management-header">
-          <h1 className="user-management-title">
-            <FiUser size={24} />
-            User Management
-          </h1>
-          <button 
-            className="btn btn-primary"
-            onClick={handleCreateUser}
-          >
-            <FiPlus size={16} />
-            Add New User
-          </button>
-        </div>
+    <div className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
+        <button
+          onClick={handleCreateUser}
+          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+        >
+          <FiPlus size={16} />
+          Add User
+        </button>
+      </div>
 
-        {/* Search and Filters */}
-        <div className="user-search-section">
-          <div className="search-input">
-            <FiSearch size={16} />
-            <input
-              type="text"
-              placeholder="Search users..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="form-control"
-            />
-          </div>
+      {/* Search Bar */}
+      <div className="mb-6">
+        <div className="relative">
+          <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+          <input
+            type="text"
+            placeholder="Search users by username or role..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
         </div>
+      </div>
 
-        {/* Users Table */}
-        <div className="table-responsive">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>User</th>
-                <th>Role</th>
-                <th>Status</th>
-                <th>Permissions</th>
-                <th>Last Login</th>
-                <th>Actions</th>
+      {/* Users Table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                User
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Role
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Description
+              </th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredUsers.map((user) => (
+              <tr key={user.user_id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 h-10 w-10">
+                      <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                        <FiUser className="h-6 w-6 text-gray-600" />
+                      </div>
+                    </div>
+                    <div className="ml-4">
+                      <div className="text-sm font-medium text-gray-900">
+                        {user.username}
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        ID: {user.user_id}
+                      </div>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(user.role_name)}`}>
+                    {user.role_name}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  {user.description || 'No description'}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <div className="flex justify-end gap-2">
+                    <button
+                      onClick={() => handleViewUser(user)}
+                      className="text-blue-600 hover:text-blue-900"
+                    >
+                      <FiEdit size={16} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteUser(user.user_id, user.username)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      <FiTrash2 size={16} />
+                    </button>
+                  </div>
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {filteredUsers.map(u => (
-                <tr key={u.id}>
-                  <td>
-                    <div className="user-info">
-                      <div className="user-name">{u.name}</div>
-                      <div className="user-email">{u.email}</div>
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`badge ${getRoleBadgeColor(u.role)}`}>
-                      {u.role}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`badge ${u.isActive ? 'badge-success' : 'badge-secondary'}`}>
-                      {u.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </td>
-                  <td>
-                    <div className="permissions-preview">
-                      {u.permissions.length > 0 ? (
-                        <>
-                          <span className="permission-count">
-                            {u.permissions.length} permission{u.permissions.length !== 1 ? 's' : ''}
-                          </span>
-                          <div className="permissions-tooltip">
-                            {u.permissions.map(permission => (
-                              <div key={permission} className="permission-item">
-                                {availablePermissions.find(p => p.value === permission)?.label || permission}
-                              </div>
-                            ))}
-                          </div>
-                        </>
-                      ) : (
-                        <span className="text-muted">No permissions</span>
-                      )}
-                    </div>
-                  </td>
-                  <td>{formatDate(u.lastLogin)}</td>
-                  <td>
-                    <div className="user-actions">
-                      <button
-                        className="btn btn-secondary"
-                        onClick={() => handleViewUser(u)}
-                        title="View Details"
-                      >
-                        <FiUser size={14} />
-                      </button>
-                      <button
-                        className="btn btn-primary"
-                        onClick={() => handleEditUser(u)}
-                        title="Edit User"
-                      >
-                        <FiEdit size={14} />
-                      </button>
-                      <button
-                        className={`btn ${u.isActive ? 'btn-warning' : 'btn-success'}`}
-                        onClick={() => handleToggleUserStatus(u.id)}
-                        title={u.isActive ? 'Deactivate' : 'Activate'}
-                      >
-                        {u.isActive ? <FiX size={14} /> : <FiCheck size={14} />}
-                      </button>
-                      {u.id !== user.id && (
-                        <button
-                          className="btn btn-danger"
-                          onClick={() => handleDeleteUser(u.id, u.name)}
-                          title="Delete User"
-                        >
-                          <FiTrash2 size={14} />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
-        {/* User Modal */}
-        {showModal && (
-          <div className="modal-overlay" onClick={() => setShowModal(false)}>
-            <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h3 className="modal-title">
-                  {modalMode === 'create' ? 'Add New User' : 
-                   modalMode === 'edit' ? 'Edit User' : 'User Details'}
-                </h3>
-                <button 
-                  className="modal-close"
-                  onClick={() => setShowModal(false)}
-                >
-                  <FiX size={20} />
-                </button>
-              </div>
+      {/* Create/Edit User Modal */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">
+                {modalMode === 'create' ? 'Create New User' : 
+                 modalMode === 'edit' ? 'Edit User' : 'User Details'}
+              </h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <FiX size={24} />
+              </button>
+            </div>
 
-              <form onSubmit={handleFormSubmit}>
-                <div className="form-group">
-                  <label className="form-label">Name</label>
+            <form onSubmit={handleFormSubmit}>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Username
+                  </label>
                   <input
                     type="text"
-                    name="name"
-                    value={formData.name}
+                    name="username"
+                    value={formData.username}
                     onChange={handleInputChange}
-                    className="form-control"
-                    required
                     disabled={modalMode === 'view'}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                    required
                   />
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Email</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="form-control"
-                    required
-                    disabled={modalMode === 'view'}
-                  />
-                </div>
+                {modalMode === 'create' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Password
+                    </label>
+                    <input
+                      type="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      required
+                    />
+                  </div>
+                )}
 
-                <div className="form-group">
-                  <label className="form-label">Role</label>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Role
+                  </label>
                   <select
-                    name="role"
-                    value={formData.role}
+                    name="role_id"
+                    value={formData.role_id}
                     onChange={handleInputChange}
-                    className="form-select"
                     disabled={modalMode === 'view'}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                    required
                   >
-                    {availableRoles.map(role => (
-                      <option key={role.value} value={role.value}>
-                        {role.label}
+                    <option value="">Select a role</option>
+                    {roles.map((role) => (
+                      <option key={role.role_id} value={role.role_id}>
+                        {role.role_name}
                       </option>
                     ))}
                   </select>
                 </div>
+              </div>
 
-                <div className="form-group">
-                  <label className="form-label">
-                    <FiShield size={16} style={{ marginRight: '8px' }} />
-                    Permissions
-                  </label>
-                  <div className="permissions-grid">
-                    {availablePermissions.map(permission => (
-                      <label key={permission.value} className="permission-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={formData.permissions.includes(permission.value)}
-                          onChange={() => handlePermissionChange(permission.value)}
-                          disabled={modalMode === 'view'}
-                        />
-                        <span className="permission-label">{permission.label}</span>
-                      </label>
-                    ))}
-                  </div>
+              {modalMode !== 'view' && (
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    {modalMode === 'create' ? 'Create User' : 'Update User'}
+                  </button>
                 </div>
-
-                <div className="form-group">
-                  <label className="permission-checkbox">
-                    <input
-                      type="checkbox"
-                      name="isActive"
-                      checked={formData.isActive}
-                      onChange={handleInputChange}
-                      disabled={modalMode === 'view'}
-                    />
-                    <span className="permission-label">Active User</span>
-                  </label>
-                </div>
-
-                {modalMode !== 'view' && (
-                  <div className="modal-footer">
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={() => setShowModal(false)}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="btn btn-primary"
-                    >
-                      {modalMode === 'create' ? 'Create User' : 'Update User'}
-                    </button>
-                  </div>
-                )}
-              </form>
-            </div>
+              )}
+            </form>
           </div>
-        )}
-      </div>
-
-      <style jsx>{`
-        .user-search-section {
-          margin-bottom: 20px;
-        }
-        
-        .search-input {
-          position: relative;
-          max-width: 400px;
-        }
-        
-        .search-input svg {
-          position: absolute;
-          left: 12px;
-          top: 50%;
-          transform: translateY(-50%);
-          color: #666;
-        }
-        
-        .search-input input {
-          padding-left: 40px;
-        }
-        
-        .user-info {
-          display: flex;
-          flex-direction: column;
-        }
-        
-        .user-name {
-          font-weight: 500;
-          color: #333;
-        }
-        
-        .user-email {
-          font-size: 0.9rem;
-          color: #666;
-        }
-        
-        .permissions-preview {
-          position: relative;
-          cursor: pointer;
-        }
-        
-        .permission-count {
-          font-size: 0.9rem;
-          color: #666;
-          text-decoration: underline;
-          text-decoration-style: dotted;
-        }
-        
-        .permissions-tooltip {
-          position: absolute;
-          top: 100%;
-          left: 0;
-          background: white;
-          border: 1px solid #ddd;
-          border-radius: 6px;
-          padding: 10px;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-          z-index: 1000;
-          min-width: 200px;
-          display: none;
-        }
-        
-        .permissions-preview:hover .permissions-tooltip {
-          display: block;
-        }
-        
-        .permission-item {
-          padding: 4px 0;
-          font-size: 0.9rem;
-          color: #333;
-        }
-        
-        .permissions-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-          gap: 10px;
-          margin-top: 10px;
-        }
-        
-        .permission-checkbox {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          cursor: pointer;
-          padding: 8px;
-          border: 1px solid #e9ecef;
-          border-radius: 4px;
-          transition: background-color 0.2s ease;
-        }
-        
-        .permission-checkbox:hover {
-          background-color: #f8f9fa;
-        }
-        
-        .permission-checkbox input[type="checkbox"] {
-          margin: 0;
-        }
-        
-        .permission-label {
-          font-size: 0.9rem;
-          color: #333;
-        }
-        
-        .text-muted {
-          color: #666;
-          font-style: italic;
-        }
-        
-        @media (max-width: 768px) {
-          .permissions-grid {
-            grid-template-columns: 1fr;
-          }
-          
-          .table {
-            font-size: 0.9rem;
-          }
-          
-          .user-actions {
-            flex-direction: column;
-            gap: 5px;
-          }
-          
-          .user-actions button {
-            padding: 4px 8px;
-            font-size: 0.8rem;
-          }
-        }
-      `}</style>
+        </div>
+      )}
     </div>
   );
 };
