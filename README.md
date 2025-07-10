@@ -50,25 +50,17 @@ A modern React.js frontend for a supermarket management system with user authent
 
 ## Demo Credentials
 
-### Admin Access
-- **Email:** admin@supermarket.com
-- **Password:** admin123
-- **Permissions:** Full system access
+### Admin Access  
+- **Username:** `admin`  
+- **Password:** `password`
 
-### Manager Access
-- **Email:** manager@supermarket.com
-- **Password:** manager123
-- **Permissions:** Sales, inventory, reports
+### Backend Developer  
+- **Username:** `backend_dev`  
+- **Password:** `password`
 
-### Cashier Access
-- **Email:** cashier@supermarket.com
-- **Password:** cashier123
-- **Permissions:** Orders, customers, returns
-
-### User Access
-- **Email:** user@supermarket.com
-- **Password:** user123
-- **Permissions:** Basic sales view
+### Business Analyst  
+- **Username:** `biz_analyst`  
+- **Password:** `password`
 
 ## Installation & Setup
 
