@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    email: '',
+    username: '',
     password: ''
   });
   const [showPassword, setShowPassword] = useState(false);
@@ -56,18 +56,18 @@ const Login = () => {
         
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label htmlFor="email" className="form-label">
+            <label htmlFor="username" className="form-label">
               <FiMail size={16} style={{ marginRight: '8px' }} />
               Email Address
             </label>
             <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
+              type="text"
+              id="username"
+              name="username"
+              value={formData.username}
               onChange={handleChange}
               className="form-control"
-              placeholder="Enter your email"
+              placeholder="Enter your username"
               required
             />
           </div>
@@ -110,8 +110,10 @@ const Login = () => {
         
         <div className="login-demo-credentials">
           <h4>Demo Credentials:</h4>
-          <p><strong>Admin:</strong> admin@supermarket.com / admin123</p>
-          <p><strong>User:</strong> user@supermarket.com / user123</p>
+          <p><strong>Admin:</strong> admin / password</p>
+          <p><strong>Backend Dev:</strong> backend_dev / password</p>
+          <p><strong>Business Analyst:</strong> biz_analyst / password</p>
+
         </div>
       </div>
       
