@@ -30,6 +30,7 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Auth check failed:', error);
       localStorage.removeItem('token');
+      setUser(null);
     } finally {
       setLoading(false);
     }
@@ -56,23 +57,27 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     localStorage.removeItem('token');
     setUser(null);
+    setError(null);
   };
 
+  // Check if user is administrator
   const isAdmin = () => {
-    return user && user.role === 'admin';
+    return user && user.role === 'administrator';
   };
 
+  // Check if user is admin or backend developer (adjust if business_analysis should have manager-like role)
   const isManager = () => {
-    return user && (user.role === 'admin' || user.role === 'manager');
+    return user && (user.role === 'administrator' || user.role === 'backend_developer');
   };
 
+  // Permission check:
   const hasPermission = (permission) => {
     if (!user) return false;
     
-    // Admin has all permissions
-    if (user.role === 'admin') return true;
+    // Administrator has all permissions
+    if (user.role === 'administrator') return true;
     
-    // Check specific permissions
+    // Other roles permissions check
     return user.permissions && user.permissions.includes(permission);
   };
 
