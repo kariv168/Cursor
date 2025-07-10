@@ -11,30 +11,23 @@ const users = [
     id: 1,
     email: 'admin@supermarket.com',
     password: 'admin123',
-    role: 'admin',
+    role: 'administrator',
     permissions: ['view_sales', 'manage_inventory', 'create_orders', 'view_reports', 'manage_products', 'process_returns', 'view_customers', 'manage_discounts']
   },
   {
     id: 2,
-    email: 'manager@supermarket.com',
-    password: 'manager123',
-    role: 'manager',
-    permissions: ['view_sales', 'manage_inventory', 'view_reports']
+    email: 'backend@supermarket.com',
+    password: 'backend123',
+    role: 'backend_developer',
+    permissions: ['view_sales', 'manage_inventory', 'view_reports', 'create_orders']
   },
   {
     id: 3,
-    email: 'cashier@supermarket.com',
-    password: 'cashier123',
-    role: 'cashier',
-    permissions: ['create_orders', 'process_returns', 'view_customers']
+    email: 'analyst@supermarket.com',
+    password: 'analyst123',
+    role: 'business_analyst',
+    permissions: ['view_sales', 'view_reports', 'view_customers']
   },
-  {
-    id: 4,
-    email: 'user@supermarket.com',
-    password: 'user123',
-    role: 'user',
-    permissions: ['view_sales']
-  }
 ];
 
 // Mock login endpoint
@@ -126,14 +119,28 @@ app.get('/api/sales', (req, res) => {
   ]);
 });
 
-// Mock users endpoint (admin only)
+// Mock users endpoint (administrator only)
 app.get('/api/users', (req, res) => {
   const authHeader = req.headers.authorization;
   
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ message: 'No token provided' });
   }
-  
+
+  const token = authHeader.substring(7);
+  const tokenParts = token.split('-');
+  const userId = parseInt(tokenParts[3]);
+
+  const user = users.find(u => u.id === userId);
+
+  if (!user) {
+    return res.status(401).json({ message: 'Invalid token' });
+  }
+
+  if (user.role !== 'administrator') {
+    return res.status(403).json({ message: 'Access denied: administrators only' });
+  }
+
   // Return users without passwords
   const usersWithoutPasswords = users.map(({ password, ...user }) => user);
   res.json(usersWithoutPasswords);
@@ -149,8 +156,7 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Mock backend server running on http://localhost:${PORT}`);
   console.log('📝 Available demo credentials:');
-  console.log('   Admin: admin@supermarket.com / admin123');
-  console.log('   Manager: manager@supermarket.com / manager123');
-  console.log('   Cashier: cashier@supermarket.com / cashier123');
-  console.log('   User: user@supermarket.com / user123');
+  console.log('   Administrator: admin@supermarket.com / admin123');
+  console.log('   Backend Developer: backend@supermarket.com / backend123');
+  console.log('   Business Analyst: analyst@supermarket.com / analyst123');
 });
