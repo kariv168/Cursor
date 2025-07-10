@@ -5,6 +5,30 @@ import { FiEdit, FiTrash2, FiPlus, FiX, FiCheck, FiSearch, FiUser, FiShield } fr
 import Loading from './Loading';
 import toast from 'react-hot-toast';
 
+const rolePermissionMap = {
+    administrator: [
+      'view_sales',
+      'manage_inventory',
+      'create_orders',
+      'view_reports',
+      'manage_products',
+      'process_returns',
+      'view_customers',
+      'manage_discounts'
+    ],
+    backend_developer: [
+      'manage_inventory',
+      'create_orders',
+      'process_returns',
+      'manage_products'
+    ],
+    business_analysis: [
+      'view_sales',
+      'view_reports',
+      'view_customers'
+    ]
+  };
+
 const UserManagement = () => {
   const { user, isAdmin } = useAuth();
   const [users, setUsers] = useState([]);
@@ -22,10 +46,9 @@ const UserManagement = () => {
   });
 
   const availableRoles = [
-    { value: 'admin', label: 'Administrator' },
-    { value: 'manager', label: 'Manager' },
-    { value: 'cashier', label: 'Cashier' },
-    { value: 'user', label: 'User' }
+    { value: 'administrator', label: 'Administrator' },
+    { value: 'backend_developer', label: 'Backend Developer' },
+    { value: 'business_analysis', label: 'Business Analysis' }
   ];
 
   const availablePermissions = [
@@ -41,73 +64,54 @@ const UserManagement = () => {
 
   useEffect(() => {
     if (isAdmin()) {
+      const fetchUsers = async () => {
+        try {
+          // Mock user data - replace with actual API call
+          const mockUsers = [
+            {
+              id: 1,
+              name: 'Alice Admin',
+              email: 'admin@supermarket.com',
+              role: 'administrator',
+              permissions: rolePermissionMap['administrator'],
+              isActive: true,
+              createdAt: '2024-01-01',
+              lastLogin: '2024-01-15'
+            },
+            {
+              id: 2,
+              name: 'Bob Backend',
+              email: 'backend@supermarket.com',
+              role: 'backend_developer',
+              permissions: rolePermissionMap['backend_developer'],
+              isActive: true,
+              createdAt: '2024-01-02',
+              lastLogin: '2024-01-14'
+            },
+            {
+              id: 3,
+              name: 'Ben Analyst',
+              email: 'analyst@supermarket.com',
+              role: 'business_analysis',
+              permissions: rolePermissionMap['business_analysis'],
+              isActive: true,
+              createdAt: '2024-01-03',
+              lastLogin: '2024-01-13'
+            }
+          ];
+
+          setUsers(mockUsers);
+        } catch (error) {
+          toast.error('Failed to load users');
+        } finally {
+          setLoading(false);
+        }
+      };
+
       fetchUsers();
     }
   }, [isAdmin]);
 
-  const fetchUsers = async () => {
-    try {
-      // Mock user data - replace with actual API call
-      const mockUsers = [
-        {
-          id: 1,
-          name: 'Admin User',
-          email: 'admin@supermarket.com',
-          role: 'admin',
-          permissions: ['view_sales', 'manage_inventory', 'create_orders', 'view_reports', 'manage_products', 'process_returns', 'view_customers', 'manage_discounts'],
-          isActive: true,
-          createdAt: '2024-01-01',
-          lastLogin: '2024-01-15'
-        },
-        {
-          id: 2,
-          name: 'John Manager',
-          email: 'manager@supermarket.com',
-          role: 'manager',
-          permissions: ['view_sales', 'manage_inventory', 'create_orders', 'view_reports', 'manage_products'],
-          isActive: true,
-          createdAt: '2024-01-02',
-          lastLogin: '2024-01-14'
-        },
-        {
-          id: 3,
-          name: 'Jane Cashier',
-          email: 'cashier@supermarket.com',
-          role: 'cashier',
-          permissions: ['create_orders', 'view_customers', 'process_returns'],
-          isActive: true,
-          createdAt: '2024-01-03',
-          lastLogin: '2024-01-15'
-        },
-        {
-          id: 4,
-          name: 'Bob User',
-          email: 'user@supermarket.com',
-          role: 'user',
-          permissions: ['view_sales'],
-          isActive: true,
-          createdAt: '2024-01-04',
-          lastLogin: '2024-01-13'
-        },
-        {
-          id: 5,
-          name: 'Alice Inactive',
-          email: 'inactive@supermarket.com',
-          role: 'user',
-          permissions: [],
-          isActive: false,
-          createdAt: '2024-01-05',
-          lastLogin: '2024-01-10'
-        }
-      ];
-
-      setUsers(mockUsers);
-    } catch (error) {
-      toast.error('Failed to load users');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleCreateUser = () => {
     setSelectedUser(null);
@@ -207,26 +211,27 @@ const UserManagement = () => {
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
+
+    if (name === 'role') {
+      setFormData(prev => ({
+        ...prev,
+        role: value,
+        permissions: rolePermissionMap[value] || []
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: type === 'checkbox' ? checked : value
+      }));
+    }
   };
 
-  const handlePermissionChange = (permission) => {
-    setFormData(prev => ({
-      ...prev,
-      permissions: prev.permissions.includes(permission)
-        ? prev.permissions.filter(p => p !== permission)
-        : [...prev.permissions, permission]
-    }));
-  };
 
   const getRoleBadgeColor = (role) => {
     switch (role) {
-      case 'admin': return 'badge-danger';
-      case 'manager': return 'badge-warning';
-      case 'cashier': return 'badge-info';
+      case 'administrator': return 'badge-danger';
+      case 'backend_developer': return 'badge-warning';
+      case 'business_analysis': return 'badge-info';
       default: return 'badge-secondary';
     }
   };
@@ -259,6 +264,18 @@ const UserManagement = () => {
       </div>
     );
   }
+
+  const handlePermissionChange = (permissionValue) => {
+    setFormData(prev => {
+      const alreadyHas = prev.permissions.includes(permissionValue);
+      return {
+        ...prev,
+        permissions: alreadyHas
+          ? prev.permissions.filter(p => p !== permissionValue)
+          : [...prev.permissions, permissionValue]
+      };
+    });
+  };
 
   return (
     <div className="container">
@@ -305,33 +322,33 @@ const UserManagement = () => {
               </tr>
             </thead>
             <tbody>
-              {filteredUsers.map(user => (
-                <tr key={user.id}>
+              {filteredUsers.map(u => (
+                <tr key={u.id}>
                   <td>
                     <div className="user-info">
-                      <div className="user-name">{user.name}</div>
-                      <div className="user-email">{user.email}</div>
+                      <div className="user-name">{u.name}</div>
+                      <div className="user-email">{u.email}</div>
                     </div>
                   </td>
                   <td>
-                    <span className={`badge ${getRoleBadgeColor(user.role)}`}>
-                      {user.role}
+                    <span className={`badge ${getRoleBadgeColor(u.role)}`}>
+                      {u.role}
                     </span>
                   </td>
                   <td>
-                    <span className={`badge ${user.isActive ? 'badge-success' : 'badge-secondary'}`}>
-                      {user.isActive ? 'Active' : 'Inactive'}
+                    <span className={`badge ${u.isActive ? 'badge-success' : 'badge-secondary'}`}>
+                      {u.isActive ? 'Active' : 'Inactive'}
                     </span>
                   </td>
                   <td>
                     <div className="permissions-preview">
-                      {user.permissions.length > 0 ? (
+                      {u.permissions.length > 0 ? (
                         <>
                           <span className="permission-count">
-                            {user.permissions.length} permission{user.permissions.length !== 1 ? 's' : ''}
+                            {u.permissions.length} permission{u.permissions.length !== 1 ? 's' : ''}
                           </span>
                           <div className="permissions-tooltip">
-                            {user.permissions.map(permission => (
+                            {u.permissions.map(permission => (
                               <div key={permission} className="permission-item">
                                 {availablePermissions.find(p => p.value === permission)?.label || permission}
                               </div>
@@ -343,34 +360,34 @@ const UserManagement = () => {
                       )}
                     </div>
                   </td>
-                  <td>{formatDate(user.lastLogin)}</td>
+                  <td>{formatDate(u.lastLogin)}</td>
                   <td>
                     <div className="user-actions">
                       <button
                         className="btn btn-secondary"
-                        onClick={() => handleViewUser(user)}
+                        onClick={() => handleViewUser(u)}
                         title="View Details"
                       >
                         <FiUser size={14} />
                       </button>
                       <button
                         className="btn btn-primary"
-                        onClick={() => handleEditUser(user)}
+                        onClick={() => handleEditUser(u)}
                         title="Edit User"
                       >
                         <FiEdit size={14} />
                       </button>
                       <button
-                        className={`btn ${user.isActive ? 'btn-warning' : 'btn-success'}`}
-                        onClick={() => handleToggleUserStatus(user.id)}
-                        title={user.isActive ? 'Deactivate' : 'Activate'}
+                        className={`btn ${u.isActive ? 'btn-warning' : 'btn-success'}`}
+                        onClick={() => handleToggleUserStatus(u.id)}
+                        title={u.isActive ? 'Deactivate' : 'Activate'}
                       >
-                        {user.isActive ? <FiX size={14} /> : <FiCheck size={14} />}
+                        {u.isActive ? <FiX size={14} /> : <FiCheck size={14} />}
                       </button>
-                      {user.id !== user.id && (
+                      {u.id !== user.id && (
                         <button
                           className="btn btn-danger"
-                          onClick={() => handleDeleteUser(user.id, user.name)}
+                          onClick={() => handleDeleteUser(u.id, u.name)}
                           title="Delete User"
                         >
                           <FiTrash2 size={14} />
