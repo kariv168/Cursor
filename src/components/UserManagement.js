@@ -31,8 +31,15 @@ const UserManagement = () => {
     try {
       setLoading(true);
       const response = await apiService.getUsers();
+      console.log('Users response:', response); // Debug log
       if (response.success && response.data) {
         setUsers(response.data.users);
+      } else if (Array.isArray(response)) {
+        // Handle case where response is directly an array
+        setUsers(response);
+      } else {
+        console.error('Unexpected users response format:', response);
+        toast.error('Failed to load users - unexpected response format');
       }
     } catch (error) {
       toast.error('Failed to load users');
@@ -45,8 +52,15 @@ const UserManagement = () => {
   const fetchRoles = async () => {
     try {
       const response = await apiService.getRoles();
+      console.log('Roles response:', response); // Debug log
       if (response.success && response.data) {
         setRoles(response.data.roles);
+      } else if (Array.isArray(response)) {
+        // Handle case where response is directly an array
+        setRoles(response);
+      } else {
+        console.error('Unexpected roles response format:', response);
+        toast.error('Failed to load roles - unexpected response format');
       }
     } catch (error) {
       toast.error('Failed to load roles');
@@ -117,8 +131,11 @@ const UserManagement = () => {
     e.preventDefault();
 
     try {
+      console.log('Submitting form data:', formData); // Debug log
+      
       if (modalMode === 'create') {
         const response = await apiService.createUser(formData);
+        console.log('Create user response:', response); // Debug log
         if (response.success) {
           toast.success('User created successfully');
           setShowModal(false);
@@ -128,6 +145,7 @@ const UserManagement = () => {
         }
       } else if (modalMode === 'edit') {
         const response = await apiService.updateUser(selectedUser.user_id, formData);
+        console.log('Update user response:', response); // Debug log
         if (response.success) {
           toast.success('User updated successfully');
           setShowModal(false);
@@ -137,8 +155,9 @@ const UserManagement = () => {
         }
       }
     } catch (error) {
+      console.error('Form submission error:', error); // Debug log
       // Handle specific error for database not connected
-      if (error.message && error.message.includes('Database is not connected')) {
+      if (error.message && (error.message.includes('Database is not connected') || error.message.includes('503'))) {
         toast.error('User management is not available in demo mode. Please connect to a database to manage users.');
       } else {
         toast.error(error.message || 'An error occurred');

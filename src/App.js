@@ -77,7 +77,7 @@ function AppContent() {
           <Route 
             path="/sales" 
             element={
-              <ProtectedRoute requiredPermission="view_sales">
+              <ProtectedRoute>
                 <SalesData />
               </ProtectedRoute>
             } 

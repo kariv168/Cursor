@@ -53,7 +53,8 @@ export const AuthProvider = ({ children }) => {
         // Map role_name to role for frontend compatibility
         const userWithRole = {
           ...user,
-          role: user.role_name
+          role: user.role_name,
+          role_name: user.role_name // Keep both for compatibility
         };
         
         setUser(userWithRole);
@@ -75,12 +76,13 @@ export const AuthProvider = ({ children }) => {
 
   // Check if user is administrator
   const isAdmin = () => {
-    return user && user.role === 'administrator';
+    return user && (user.role === 'administrator' || user.role_name === 'administrator');
   };
 
   // Check if user is admin or backend developer (adjust if business_analysis should have manager-like role)
   const isManager = () => {
-    return user && (user.role === 'administrator' || user.role === 'backend_developer');
+    return user && (user.role === 'administrator' || user.role === 'backend_developer' || 
+                   user.role_name === 'administrator' || user.role_name === 'backend_developer');
   };
 
   // Permission check:
@@ -88,7 +90,17 @@ export const AuthProvider = ({ children }) => {
     if (!user) return false;
     
     // Administrator has all permissions
-    if (user.role === 'administrator') return true;
+    if (user.role === 'administrator' || user.role_name === 'administrator') return true;
+    
+    // Backend developer has most permissions
+    if (user.role === 'backend_developer' || user.role_name === 'backend_developer') {
+      return ['view_sales', 'view_products', 'view_inventory', 'view_orders'].includes(permission);
+    }
+    
+    // Business analyst has view permissions
+    if (user.role === 'business_analyst' || user.role_name === 'business_analyst') {
+      return ['view_sales', 'view_products', 'view_inventory', 'view_orders'].includes(permission);
+    }
     
     // Other roles permissions check
     return user.permissions && user.permissions.includes(permission);
