@@ -121,7 +121,12 @@ const UserManagement = () => {
         toast.error('Edit user functionality not implemented in backend');
       }
     } catch (error) {
-      toast.error(error.message || 'An error occurred');
+      // Handle specific error for database not connected
+      if (error.message && error.message.includes('Database is not connected')) {
+        toast.error('User creation is not available in demo mode. Please connect to a database to create users.');
+      } else {
+        toast.error(error.message || 'An error occurred');
+      }
     }
   };
 
