@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/apiService';
-import { FiCalendar, FiDownload, FiFilter, FiSearch, FiTrendingUp, FiPieChart, FiBarChart3 } from 'react-icons/fi';
+import { FiCalendar, FiDownload, FiFilter, FiSearch, FiTrendingUp, FiPieChart, FiBarChart } from 'react-icons/fi';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area } from 'recharts';
 import Loading from './Loading';
 import toast from 'react-hot-toast';
@@ -130,7 +130,7 @@ const SalesData = () => {
             }`}
             onClick={() => setViewMode('table')}
           >
-            <FiBarChart3 size={16} className="inline mr-2" />
+            <FiBarChart size={24} className="inline mr-2" />
             Table View
           </button>
           <button 

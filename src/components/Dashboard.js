@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiService } from '../services/apiService';
-import { FiUsers, FiShoppingCart, FiDollarSign, FiTrendingUp, FiPackage, FiBarChart3, FiCalendar } from 'react-icons/fi';
+import { FiUsers, FiShoppingCart, FiDollarSign, FiTrendingUp, FiPackage, FiBarChart, FiCalendar } from 'react-icons/fi';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, AreaChart, Area } from 'recharts';
 import Loading from './Loading';
 import toast from 'react-hot-toast';
@@ -116,7 +116,7 @@ const Dashboard = () => {
           {roleContent.features.map((feature, index) => (
             <div key={index} className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
               <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                <FiBarChart3 size={16} className="text-blue-600" />
+                <FiBarChart size={24} className="text-blue-600" />
               </div>
               <span className="text-sm font-medium text-gray-700">{feature}</span>
             </div>
@@ -248,7 +248,7 @@ const Dashboard = () => {
               onClick={() => window.location.href = '/sales'}
               className="flex items-center justify-center p-4 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
             >
-              <FiBarChart3 className="h-6 w-6 text-blue-600 mr-3" />
+              <FiBarChart className="h-6 w-6 text-blue-600 mr-3" />
               <span className="font-medium text-blue-900">View Sales Data</span>
             </button>
           )}
