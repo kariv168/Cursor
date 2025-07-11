@@ -58,7 +58,7 @@ const Navbar = () => {
             {user?.name || user?.email}
           </span>
           <span className="navbar-user-role">
-            {user?.role || 'User'}
+            {user?.role_name || user?.role || 'User'}
           </span>
         </div>
         

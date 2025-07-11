@@ -25,10 +25,8 @@ const SalesData = () => {
   const COLORS = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6c757d', '#17a2b8', '#fd7e14', '#6f42c1'];
 
   useEffect(() => {
-    if (hasPermission('view_sales') || user?.role === 'administrator') {
-      fetchAllSalesData();
-    }
-  }, [user, hasPermission]);
+    fetchAllSalesData();
+  }, [user]);
 
   const fetchAllSalesData = async () => {
     try {
@@ -42,10 +40,11 @@ const SalesData = () => {
         apiService.getDailySalesTrend({ days: 30 })
       ]);
       
-      setSalesData(salesResponse || []);
-      setSummaryData(summaryResponse || {});
-      setCategoryData(categoryResponse || []);
-      setTrendData(trendResponse || []);
+      // Handle responses that might be wrapped in success/data structure
+      setSalesData(Array.isArray(salesResponse) ? salesResponse : (salesResponse?.data || salesResponse || []));
+      setSummaryData(summaryResponse?.data || summaryResponse || {});
+      setCategoryData(Array.isArray(categoryResponse) ? categoryResponse : (categoryResponse?.data || categoryResponse || []));
+      setTrendData(Array.isArray(trendResponse) ? trendResponse : (trendResponse?.data || trendResponse || []));
       
     } catch (error) {
       toast.error('Failed to load sales data');
@@ -106,16 +105,7 @@ const SalesData = () => {
     return <Loading message="Loading sales data..." />;
   }
 
-  if (!hasPermission('view_sales') && user?.role !== 'administrator') {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
-          <h2 className="text-xl font-semibold text-red-800 mb-2">Access Denied</h2>
-          <p className="text-red-600">You don't have permission to view sales data.</p>
-        </div>
-      </div>
-    );
-  }
+  // Removed permission check since we're allowing all users to access sales data in demo mode
 
   return (
     <div className="container mx-auto px-4 py-8">
