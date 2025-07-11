@@ -66,6 +66,14 @@ export const apiService = {
     return await api.post('/auth/users', userData);
   },
 
+  updateUser: async (userId, userData) => {
+    return await api.put(`/auth/users/${userId}`, userData);
+  },
+
+  deleteUser: async (userId) => {
+    return await api.delete(`/auth/users/${userId}`);
+  },
+
   getRoles: async () => {
     return await api.get('/auth/roles');
   },
@@ -175,6 +183,18 @@ export const apiService = {
   // Sales data endpoints
   getSalesData: async (params = {}) => {
     return await api.get('/sales', { params });
+  },
+
+  getSalesSummary: async (params = {}) => {
+    return await api.get('/sales/summary', { params });
+  },
+
+  getSalesByCategory: async (params = {}) => {
+    return await api.get('/sales/by-category', { params });
+  },
+
+  getDailySalesTrend: async (params = {}) => {
+    return await api.get('/sales/daily-trend', { params });
   },
 
   // Health check

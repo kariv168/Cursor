@@ -30,6 +30,7 @@ const inventoryRoutes = require('./routes/inventoryRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const branchRoutes = require('./routes/branchRoutes');
 const customerRoutes = require('./routes/customerRoutes');
+const salesRoutes = require('./routes/salesRoutes');
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -39,6 +40,7 @@ app.use('/api/inventory', inventoryRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/branches', branchRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api/sales', salesRoutes);
 
 // Health check endpoint
 app.get('/api/health', async (req, res) => {

@@ -95,10 +95,20 @@ const UserManagement = () => {
 
     if (window.confirm(`Are you sure you want to delete user "${userName}"?`)) {
       try {
-        // Note: Backend doesn't have delete user endpoint yet
-        toast.error('Delete user functionality not implemented in backend');
+        const response = await apiService.deleteUser(userId);
+        if (response.success) {
+          toast.success(`User "${userName}" deleted successfully`);
+          fetchUsers(); // Refresh the list
+        } else {
+          toast.error(response.message || 'Failed to delete user');
+        }
       } catch (error) {
-        toast.error('Failed to delete user');
+        // Handle specific error for database not connected
+        if (error.message && error.message.includes('Database is not connected')) {
+          toast.error('User deletion is not available in demo mode. Please connect to a database to delete users.');
+        } else {
+          toast.error(error.message || 'Failed to delete user');
+        }
       }
     }
   };
@@ -117,13 +127,19 @@ const UserManagement = () => {
           toast.error(response.message || 'Failed to create user');
         }
       } else if (modalMode === 'edit') {
-        // Note: Backend doesn't have update user endpoint yet
-        toast.error('Edit user functionality not implemented in backend');
+        const response = await apiService.updateUser(selectedUser.user_id, formData);
+        if (response.success) {
+          toast.success('User updated successfully');
+          setShowModal(false);
+          fetchUsers(); // Refresh the list
+        } else {
+          toast.error(response.message || 'Failed to update user');
+        }
       }
     } catch (error) {
       // Handle specific error for database not connected
       if (error.message && error.message.includes('Database is not connected')) {
-        toast.error('User creation is not available in demo mode. Please connect to a database to create users.');
+        toast.error('User management is not available in demo mode. Please connect to a database to manage users.');
       } else {
         toast.error(error.message || 'An error occurred');
       }
@@ -203,84 +219,15 @@ const UserManagement = () => {
         </div>
       </div>
 
-      {/* Users Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                User
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Role
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Description
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredUsers.map((user) => (
-              <tr key={user.user_id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="flex-shrink-0 h-10 w-10">
-                      <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                        <FiUser className="h-6 w-6 text-gray-600" />
-                      </div>
-                    </div>
-                    <div className="ml-4">
-                      <div className="text-sm font-medium text-gray-900">
-                        {user.username}
-                      </div>
-                      <div className="text-sm text-gray-500">
-                        ID: {user.user_id}
-                      </div>
-                    </div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(user.role_name)}`}>
-                    {user.role_name}
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  {user.description || 'No description'}
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <div className="flex justify-end gap-2">
-                    <button
-                      onClick={() => handleViewUser(user)}
-                      className="text-blue-600 hover:text-blue-900"
-                    >
-                      <FiEdit size={16} />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteUser(user.user_id, user.username)}
-                      className="text-red-600 hover:text-red-900"
-                    >
-                      <FiTrash2 size={16} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Create/Edit User Modal */}
+      {/* User Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">
+              <h3 className="text-lg font-semibold text-gray-900">
                 {modalMode === 'create' ? 'Create New User' : 
                  modalMode === 'edit' ? 'Edit User' : 'User Details'}
-              </h2>
+              </h3>
               <button
                 onClick={() => setShowModal(false)}
                 className="text-gray-400 hover:text-gray-600"
@@ -306,21 +253,20 @@ const UserManagement = () => {
                   />
                 </div>
 
-                {modalMode === 'create' && (
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Password
-                    </label>
-                    <input
-                      type="password"
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      required
-                    />
-                  </div>
-                )}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Password {modalMode === 'edit' && '(leave blank to keep current)'}
+                  </label>
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    disabled={modalMode === 'view'}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+                    required={modalMode === 'create'}
+                  />
+                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -335,36 +281,139 @@ const UserManagement = () => {
                     required
                   >
                     <option value="">Select a role</option>
-                    {roles.map((role) => (
+                    {roles.map(role => (
                       <option key={role.role_id} value={role.role_id}>
-                        {role.role_name}
+                        {role.role_name.charAt(0).toUpperCase() + role.role_name.slice(1).replace('_', ' ')}
                       </option>
                     ))}
                   </select>
                 </div>
+
+                {modalMode === 'view' && selectedUser && (
+                  <div className="bg-gray-50 p-4 rounded-md">
+                    <h4 className="font-medium text-gray-900 mb-2">User Information</h4>
+                    <div className="space-y-2 text-sm">
+                      <div>
+                        <span className="font-medium">User ID:</span> {selectedUser.user_id}
+                      </div>
+                      <div>
+                        <span className="font-medium">Role Description:</span> {selectedUser.description}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
 
-              {modalMode !== 'view' && (
-                <div className="flex justify-end gap-3 mt-6">
-                  <button
-                    type="button"
-                    onClick={() => setShowModal(false)}
-                    className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
-                  >
-                    Cancel
-                  </button>
+              <div className="flex justify-end space-x-3 mt-6">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
+                >
+                  Cancel
+                </button>
+                {modalMode !== 'view' && (
                   <button
                     type="submit"
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                   >
                     {modalMode === 'create' ? 'Create User' : 'Update User'}
                   </button>
-                </div>
-              )}
+                )}
+              </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Users Table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">User List</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  User
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Role
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Description
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredUsers.map((user) => (
+                <tr key={user.user_id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 h-10 w-10">
+                        <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                          <FiUser className="h-6 w-6 text-blue-600" />
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {user.username}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          ID: {user.user_id}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(user.role_name)}`}>
+                      {user.role_name.charAt(0).toUpperCase() + user.role_name.slice(1).replace('_', ' ')}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {user.description}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleViewUser(user)}
+                        className="text-blue-600 hover:text-blue-900"
+                        title="View Details"
+                      >
+                        <FiUser size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleEditUser(user)}
+                        className="text-green-600 hover:text-green-900"
+                        title="Edit User"
+                      >
+                        <FiEdit size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteUser(user.user_id, user.username)}
+                        className="text-red-600 hover:text-red-900"
+                        title="Delete User"
+                        disabled={user.user_id === user?.user_id}
+                      >
+                        <FiTrash2 size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        {filteredUsers.length === 0 && (
+          <div className="px-6 py-8 text-center text-gray-500">
+            No users found
+          </div>
+        )}
+      </div>
     </div>
   );
 };
