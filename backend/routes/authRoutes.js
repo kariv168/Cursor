@@ -25,6 +25,19 @@ router.get('/users',
   authController.getAllUsers
 );
 
+router.put('/users/:userId', 
+  authenticateToken, 
+  requireAdmin, 
+  validate(schemas.userUpdate), 
+  authController.updateUser
+);
+
+router.delete('/users/:userId', 
+  authenticateToken, 
+  requireAdmin, 
+  authController.deleteUser
+);
+
 router.get('/roles', 
   authenticateToken, 
   authController.getRoles

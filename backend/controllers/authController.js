@@ -274,11 +274,146 @@ const getRoles = async (req, res) => {
   }
 };
 
+// Update user (Admin only)
+const updateUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { username, password, role_id } = req.body;
+
+    // Check if user exists
+    const existingUser = await executeQuery(
+      'SELECT user_id FROM users WHERE user_id = ?',
+      [userId]
+    );
+
+    if (existingUser.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Check if username already exists (excluding current user)
+    if (username) {
+      const usernameExists = await executeQuery(
+        'SELECT user_id FROM users WHERE username = ? AND user_id != ?',
+        [username, userId]
+      );
+
+      if (usernameExists.length > 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'Username already exists'
+        });
+      }
+    }
+
+    // Build update query dynamically
+    let updateQuery = 'UPDATE users SET ';
+    const updateParams = [];
+    const updates = [];
+
+    if (username) {
+      updates.push('username = ?');
+      updateParams.push(username);
+    }
+
+    if (password) {
+      const saltRounds = 10;
+      const password_hash = await bcrypt.hash(password, saltRounds);
+      updates.push('password_hash = ?');
+      updateParams.push(password_hash);
+    }
+
+    if (role_id) {
+      updates.push('role_id = ?');
+      updateParams.push(role_id);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'No fields to update'
+      });
+    }
+
+    updateQuery += updates.join(', ') + ' WHERE user_id = ?';
+    updateParams.push(userId);
+
+    await executeQuery(updateQuery, updateParams);
+
+    res.json({
+      success: true,
+      message: 'User updated successfully'
+    });
+
+  } catch (error) {
+    console.error('Update user error:', error.message);
+    
+    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.message.includes('connect')) {
+      res.status(503).json({
+        success: false,
+        message: 'Database is not connected. User update is not available in demo mode.'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+};
+
+// Delete user (Admin only)
+const deleteUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    // Check if user exists
+    const existingUser = await executeQuery(
+      'SELECT user_id, username FROM users WHERE user_id = ?',
+      [userId]
+    );
+
+    if (existingUser.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // Delete user
+    await executeQuery('DELETE FROM users WHERE user_id = ?', [userId]);
+
+    res.json({
+      success: true,
+      message: `User "${existingUser[0].username}" deleted successfully`
+    });
+
+  } catch (error) {
+    console.error('Delete user error:', error.message);
+    
+    if (error.code === 'ECONNREFUSED' || error.code === 'ENOTFOUND' || error.message.includes('connect')) {
+      res.status(503).json({
+        success: false,
+        message: 'Database is not connected. User deletion is not available in demo mode.'
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: 'Internal server error'
+      });
+    }
+  }
+};
+
 module.exports = {
   login,
   getCurrentUser,
   refreshToken,
   createUser,
   getAllUsers,
+  updateUser,
+  deleteUser,
   getRoles
 };
