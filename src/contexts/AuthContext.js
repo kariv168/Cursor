@@ -75,12 +75,15 @@ export const AuthProvider = ({ children }) => {
 
   // Check if user is administrator
   const isAdmin = () => {
-    return user && user.role === 'administrator';
+    return user && (user.role === 'administrator' || user.role === 'Administrator');
   };
 
   // Check if user is admin or backend developer (adjust if business_analysis should have manager-like role)
   const isManager = () => {
-    return user && (user.role === 'administrator' || user.role === 'backend_developer');
+    return user && (
+      user.role === 'administrator' || user.role === 'Administrator' ||
+      user.role === 'backend_developer' || user.role === 'Backend Developer'
+    );
   };
 
   // Permission check:
@@ -88,7 +91,7 @@ export const AuthProvider = ({ children }) => {
     if (!user) return false;
     
     // Administrator has all permissions
-    if (user.role === 'administrator') return true;
+    if (user.role === 'administrator' || user.role === 'Administrator') return true;
     
     // Other roles permissions check
     return user.permissions && user.permissions.includes(permission);

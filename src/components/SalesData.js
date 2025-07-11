@@ -25,7 +25,7 @@ const SalesData = () => {
   const COLORS = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6c757d', '#17a2b8', '#fd7e14', '#6f42c1'];
 
   useEffect(() => {
-    if (hasPermission('view_sales') || user?.role === 'administrator') {
+    if (hasPermission('view_sales') || user?.role === 'administrator' || user?.role === 'Administrator') {
       fetchAllSalesData();
     }
   }, [user, hasPermission]);
@@ -106,7 +106,7 @@ const SalesData = () => {
     return <Loading message="Loading sales data..." />;
   }
 
-  if (!hasPermission('view_sales') && user?.role !== 'administrator') {
+  if (!hasPermission('view_sales') && user?.role !== 'administrator' && user?.role !== 'Administrator') {
     return (
       <div className="container mx-auto px-4 py-8">
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
