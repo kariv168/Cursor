@@ -71,9 +71,9 @@ const login = async (req, res) => {
     
     // Fallback authentication when database is not available
     const demoUsers = {
-      'admin': { user_id: 1, username: 'admin', role_name: 'administrator', description: 'System administrator' },
-      'backend_dev': { user_id: 2, username: 'backend_dev', role_name: 'backend_developer', description: 'Backend developer' },
-      'biz_analyst': { user_id: 3, username: 'biz_analyst', role_name: 'business_analyst', description: 'Business analyst' }
+      'admin': { user_id: 1, username: 'admin', role_name: 'Administrator', description: 'Has full access to all system modules and configurations' },
+      'backend_dev': { user_id: 2, username: 'backend_dev', role_name: 'Backend Developer', description: 'Can access APIs and backend components for development' },
+      'biz_analyst': { user_id: 3, username: 'biz_analyst', role_name: 'Business Analyst', description: 'Can view reports, data, and system performance, but cannot modify data' }
     };
 
     if (demoUsers[username] && password === 'password') {
@@ -211,20 +211,20 @@ const getAllUsers = async (req, res) => {
       {
         user_id: 1,
         username: 'admin',
-        role_name: 'administrator',
-        description: 'System administrator with full access'
+        role_name: 'Administrator',
+        description: 'Has full access to all system modules and configurations'
       },
       {
         user_id: 2,
         username: 'backend_dev',
-        role_name: 'backend_developer',
-        description: 'Backend developer with technical access'
+        role_name: 'Backend Developer',
+        description: 'Can access APIs and backend components for development'
       },
       {
         user_id: 3,
         username: 'biz_analyst',
-        role_name: 'business_analyst',
-        description: 'Business analyst with reporting access'
+        role_name: 'Business Analyst',
+        description: 'Can view reports, data, and system performance, but cannot modify data'
       }
     ];
 
@@ -252,18 +252,18 @@ const getRoles = async (req, res) => {
     const mockRoles = [
       {
         role_id: 1,
-        role_name: 'administrator',
-        description: 'System administrator with full access'
+        role_name: 'Administrator',
+        description: 'Has full access to all system modules and configurations'
       },
       {
         role_id: 2,
-        role_name: 'backend_developer',
-        description: 'Backend developer with technical access'
+        role_name: 'Backend Developer',
+        description: 'Can access APIs and backend components for development'
       },
       {
         role_id: 3,
-        role_name: 'business_analyst',
-        description: 'Business analyst with reporting access'
+        role_name: 'Business Analyst',
+        description: 'Can view reports, data, and system performance, but cannot modify data'
       }
     ];
 
