@@ -24,6 +24,7 @@ app.use('/api/', limiter);
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
+const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
 const inventoryRoutes = require('./routes/inventoryRoutes');
 const orderRoutes = require('./routes/orderRoutes');
@@ -32,6 +33,7 @@ const customerRoutes = require('./routes/customerRoutes');
 
 // API Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/inventory', inventoryRoutes);
 app.use('/api/orders', orderRoutes);
@@ -127,7 +129,7 @@ app.get('/api/dashboard/stats', async (req, res) => {
   }
 });
 
-// Mock sales data endpoint (compatible with existing frontend)
+// Sales data endpoint (compatible with existing frontend)
 app.get('/api/sales', async (req, res) => {
   try {
     const { executeQuery } = require('./config/database');
@@ -137,16 +139,20 @@ app.get('/api/sales', async (req, res) => {
       SELECT 
         oi.product_id as id,
         p.product_name as product,
+        pc.category_name as category,
         SUM(oi.quantity) as quantity,
         SUM(oi.quantity * oi.unit_price) as total,
-        DATE(o.order_date) as date
+        DATE(o.order_date) as date,
+        b.branch_name as branch
       FROM order_items oi
       JOIN products p ON oi.product_id = p.product_id
+      JOIN product_categories pc ON p.category_id = pc.category_id
       JOIN orders o ON oi.order_id = o.order_id
-      WHERE DATE(o.order_date) >= DATE_SUB(CURDATE(), INTERVAL 7 DAYS)
-      GROUP BY oi.product_id, DATE(o.order_date)
+      JOIN branches b ON o.branch_id = b.branch_id
+      WHERE DATE(o.order_date) >= DATE_SUB(CURDATE(), INTERVAL 30 DAYS)
+      GROUP BY oi.product_id, DATE(o.order_date), o.branch_id
       ORDER BY o.order_date DESC, total DESC
-      LIMIT 20
+      LIMIT 50
     `;
 
     const sales = await executeQuery(salesQuery);
@@ -159,18 +165,16 @@ app.get('/api/sales', async (req, res) => {
   } catch (error) {
     console.error('Sales data error, using mock data:', error.message);
     
-    // Fallback to mock data when database is not available
+    // Fallback to mock data when database is not available (using products from the schema)
     const mockSalesData = [
-      { id: 1, product: 'Milk', quantity: 150, total: 525.00, date: '2024-01-15' },
-      { id: 2, product: 'Bread', quantity: 200, total: 500.00, date: '2024-01-15' },
-      { id: 3, product: 'Apples', quantity: 300, total: 360.00, date: '2024-01-14' },
-      { id: 4, product: 'Cheese', quantity: 80, total: 480.00, date: '2024-01-14' },
-      { id: 5, product: 'Bananas', quantity: 250, total: 200.00, date: '2024-01-13' },
-      { id: 6, product: 'Chicken', quantity: 50, total: 425.00, date: '2024-01-13' },
-      { id: 7, product: 'Yogurt', quantity: 120, total: 480.00, date: '2024-01-12' },
-      { id: 8, product: 'Pasta', quantity: 180, total: 360.00, date: '2024-01-12' },
-      { id: 9, product: 'Beef', quantity: 30, total: 360.00, date: '2024-01-11' },
-      { id: 10, product: 'Tomatoes', quantity: 200, total: 300.00, date: '2024-01-11' },
+      { id: 1, product: 'Coca-Cola Can', category: 'Beverages', quantity: 150, total: 120.00, date: '2024-01-15', branch: 'Central Market Branch' },
+      { id: 2, product: 'Lays Classic Chips', category: 'Snacks', quantity: 80, total: 96.00, date: '2024-01-15', branch: 'Central Market Branch' },
+      { id: 3, product: 'Milk 1L', category: 'Dairy', quantity: 70, total: 105.00, date: '2024-01-14', branch: 'Riverside Branch' },
+      { id: 4, product: 'Banana (per kg)', category: 'Produce', quantity: 30, total: 21.00, date: '2024-01-14', branch: 'Riverside Branch' },
+      { id: 1, product: 'Coca-Cola Can', category: 'Beverages', quantity: 120, total: 96.00, date: '2024-01-13', branch: 'Riverside Branch' },
+      { id: 2, product: 'Lays Classic Chips', category: 'Snacks', quantity: 60, total: 72.00, date: '2024-01-13', branch: 'Central Market Branch' },
+      { id: 3, product: 'Milk 1L', category: 'Dairy', quantity: 45, total: 67.50, date: '2024-01-12', branch: 'Central Market Branch' },
+      { id: 4, product: 'Banana (per kg)', category: 'Produce', quantity: 25, total: 17.50, date: '2024-01-12', branch: 'Riverside Branch' },
     ];
 
     res.json(mockSalesData);

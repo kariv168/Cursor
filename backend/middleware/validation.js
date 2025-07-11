@@ -112,6 +112,13 @@ const schemas = {
     username: Joi.string().min(3).max(50).required(),
     password: Joi.string().min(6).required(),
     role_id: Joi.number().integer().positive().required()
+  }),
+
+  // User update schemas (password is optional for updates)
+  userUpdate: Joi.object({
+    username: Joi.string().min(3).max(50).required(),
+    password: Joi.string().min(6).optional().allow(''),
+    role_id: Joi.number().integer().positive().required()
   })
 };
 
